@@ -1523,8 +1523,7 @@ static void cpu_init_hyp_mode(void *dummy)
 
 	__cpu_init_hyp_mode(pgd_ptr, hyp_stack_ptr, vector_ptr);
 	__cpu_init_stage2();
-
-	alloc_shmem();
+	
 }
 
 static void cpu_hyp_reset(void)
@@ -1961,6 +1960,8 @@ int kvm_arch_init(void *opaque)
 		kvm_info("VHE mode initialized successfully\n");
 	else
 		kvm_info("Hyp mode initialized successfully\n");
+	
+	alloc_shmem();
 
 	return 0;
 

@@ -1490,6 +1490,8 @@ static void alloc_shmem(void)
 	int num_pages;
 	unsigned long base_addr, size; 
 
+	printk(KERN_INFO "[SeKVM] Allocating Shared Memory\n");
+
 	num_pages = 5;
 	first_page = alloc_pages(GFP_KERNEL, num_pages);
 	base_addr = page_to_phys(first_page);

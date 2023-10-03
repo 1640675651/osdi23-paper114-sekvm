@@ -26,6 +26,8 @@ void __hyp_text register_shmem(u64 base, u64 size) {
 	struct el2_data *el2_data = get_el2_data_start();
 	int i;
 
+	print_string("[SeKVM] Registering Shared Memory\n");
+
 	el2_data->shmem_base = base; 
 	el2_data->shmem_size = size; 
 

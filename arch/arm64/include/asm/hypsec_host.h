@@ -93,6 +93,9 @@ struct el2_data {
 	u64 page_pool_start;
 	phys_addr_t host_vttbr;
 
+	u64 shmem_base;
+	u64 shmem_size;
+
 	unsigned long used_pages;
 	unsigned long used_tmp_pages;
 	unsigned long pl011_base;

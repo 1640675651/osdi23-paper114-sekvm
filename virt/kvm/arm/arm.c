@@ -1484,6 +1484,22 @@ long kvm_arch_vm_ioctl(struct file *filp,
 	}
 }
 
+static void alloc_shmem(void)
+{
+	struct page *first_page;
+	int num_pages;
+	unsigned long base_addr, size; 
+
+	num_pages = 5;
+	first_page = alloc_pages(GFP_KERNEL, num_pages);
+	base_addr = page_to_phys(first_page);
+
+	size = (1 << num_pages) * PAGE_SIZE;
+
+	kvm_call_core(HVC_HOST_SHMEM_REGISTER, base_addr, size);
+
+}
+
 static void cpu_init_hyp_mode(void *dummy)
 {
 	phys_addr_t pgd_ptr;
@@ -1505,6 +1521,8 @@ static void cpu_init_hyp_mode(void *dummy)
 
 	__cpu_init_hyp_mode(pgd_ptr, hyp_stack_ptr, vector_ptr);
 	__cpu_init_stage2();
+
+	alloc_shmem();
 }
 
 static void cpu_hyp_reset(void)

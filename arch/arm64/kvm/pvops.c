@@ -8,6 +8,7 @@
 #include <asm/kvm_mmu.h>
 #include <asm/kvm_hyp.h>
 #include <asm/hypsec_host.h>
+#include <asm/hypsec_shmem.h>
 
 #include <kvm/pvops.h>
 
@@ -33,6 +34,11 @@ int __hyp_text handle_pvops(u32 vmid, u32 vcpuid)
 		//case KVM_SET_BALLOON_PFN:
 		//	set_balloon_pfn(shadow_ctxt);
 		//	break;
+		case HVC_GET_SHMEM_SIZE:
+			u64 ret;
+			ret = handle_get_shmem_size(vmid, addr, size);
+			set_shadow_ctxt(vmid, vcpuid, 0, ret);
+			break;			
 		default:
 			return -EINVAL;
 	}

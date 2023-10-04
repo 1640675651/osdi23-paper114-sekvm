@@ -14,31 +14,11 @@
 #include <asm/virt.h>
 #include <asm/kernel-pgtable.h>
 #include <asm/hypsec_host.h>
+#include <asm/hypsec_shmem.h>
 #include <asm/spinlock_types.h>
 #include <linux/serial_reg.h>
 
 #include "hypsec.h"
-
-#define SHHMEM (EL2_MAX_VMID + 2)
-
-
-void __hyp_text register_shmem(u64 base, u64 size) {
-	struct el2_data *el2_data = get_el2_data_start();
-	int i;
-
-	print_string("[SeKVM] Registering Shared Memory\n");
-
-	el2_data->shmem_base = base; 
-	el2_data->shmem_size = size; 
-
-	for (i = 0; i < size / PAGE_SIZE; i++) {	
-		u64 page_base = base + i * PAGE_SIZE;
-		assign_pfn_to_vm(SHHMEM, (u64)i, page_base/PAGE_SIZE);
-	
-	}
-	
-}
-
 
 static void __hyp_text self_test(void)
 {
@@ -198,7 +178,7 @@ void __hyp_text handle_host_hvc(struct s2_host_regs *hr)
 		v_kvm_phys_addr_ioremap((u32)get_host_reg(hr, 1), get_host_reg(hr, 2), get_host_reg(hr, 3), get_host_reg(hr, 4));
 		break;
 	case HVC_HOST_SHMEM_REGISTER:
-		register_shmem(get_host_reg(hr, 1), get_host_reg(hr, 2));
+		shmem_register(get_host_reg(hr, 1), get_host_reg(hr, 2));
 		break;
 	default:
 		print_string("\rno support hvc:\n");

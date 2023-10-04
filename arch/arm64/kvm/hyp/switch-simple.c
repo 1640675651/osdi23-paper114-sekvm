@@ -25,6 +25,8 @@
 #include <asm/hypsec_constant.h>
 
 #include "switch-simple.h"
+#include "../../hypsec_proved/hypsec.h" // This is not at all how we should do this
+
 
 static void __hyp_text __activate_traps_common(struct kvm_vcpu *vcpu)
 {
@@ -183,6 +185,35 @@ static bool __hyp_text __populate_fault_info(u32 vmid, u32 vcpuid, u32 esr)
 	} else {
 		hpfar = get_hpfar_el2();
 	}
+	// Get el2_data lock
+	// get vm_info lock 
+
+	// get el2 data lock to wait for shmem handling to finish (could probably make this more efficient)
+	acquire_lock_core();
+
+	// lock vm info lock
+	acquire_lock_vm(vmid);
+
+	// write IPA range to vm_info 
+	struct el2_vm_info *vm_info = vmid_to_vm_info(vmid);
+	u64 guest_base = vm_info->shmem_guest_base_addr;
+	u64 shmem_size = vm_info->shmem_guest_size;
+
+	// Get IPA that caused fault
+	phys_addr_t IPA = (hpfar & HPFAR_MASK) << 8;
+
+	// Check if IPA is in shared memory 
+	if (IPA > guest_base && IPA < shmem_size) {
+		// If so, since we waited on acquire_lock_core() we know that we've already set the page table up correctly
+		// So just return false and redo memory access
+		release_lock_vm(vmid);
+		release_lock_core();
+		return false;
+	}	
+
+	release_lock_vm(vmid);
+	release_lock_core();
+
 
 	vcpu->arch.fault.far_el2 = far;
 	vcpu->arch.fault.hpfar_el2 = hpfar;

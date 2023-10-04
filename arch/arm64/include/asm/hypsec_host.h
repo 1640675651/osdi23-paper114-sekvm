@@ -76,6 +76,11 @@ struct el2_vm_info {
 	uint8_t iv[16];
 	uint8_t public_key[32];
 	bool powered_on;
+
+	/* For shmem */
+	u64 shmem_guest_base_addr;
+	u64 shmem_guest_size;
+
 	/* For VM private pool */
 	u64 page_pool_start;
 	unsigned long used_pages;

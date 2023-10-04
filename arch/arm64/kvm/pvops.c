@@ -36,9 +36,15 @@ int __hyp_text handle_pvops(u32 vmid, u32 vcpuid)
 		//	break;
 		case HVC_GET_SHMEM_SIZE:
 			u64 ret;
-			ret = handle_get_shmem_size(vmid, addr, size);
+			ret = handle_get_shmem_size();
 			set_shadow_ctxt(vmid, vcpuid, 0, ret);
-			break;			
+			break;		
+		case HVC_GUEST_SHMEM_REGISTER:
+			handle_guest_shmem_register(vmid, addr);	
+			break;
+		case HVC_GUEST_SHMEM_UNREGISTER:
+			handle_guest_shmem_unregister(vmid);
+			break;		
 		default:
 			return -EINVAL;
 	}

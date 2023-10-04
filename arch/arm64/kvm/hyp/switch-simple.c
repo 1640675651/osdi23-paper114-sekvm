@@ -203,11 +203,12 @@ static bool __hyp_text __populate_fault_info(u32 vmid, u32 vcpuid, u32 esr)
 	phys_addr_t IPA = (hpfar & HPFAR_MASK) << 8;
 
 	// Check if IPA is in shared memory 
-	if (IPA > guest_base && IPA < shmem_size) {
+	if (IPA > guest_base && IPA < (guest_base +shmem_size)) {
 		// If so, since we waited on acquire_lock_core() we know that we've already set the page table up correctly
 		// So just return false and redo memory access
 		release_lock_vm(vmid);
 		release_lock_core();
+		print_string("[SeKVM] Hit fault into shared memory, fixed and redoing\n");
 		return false;
 	}	
 

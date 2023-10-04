@@ -96,6 +96,7 @@ void __hyp_text handle_guest_shmem_register(u32 vmid, u64 guest_base) {
 	struct el2_vm_info *vm_info;
 	int i;
 
+	print_string("[SeKVM] Guest registering for shared memory\n");
 	// get el2 data lock 
 	acquire_lock_core();
 	el2_data = get_el2_data_start();
@@ -127,6 +128,7 @@ void __hyp_text handle_guest_shmem_register(u32 vmid, u64 guest_base) {
 		map_pfn_vm(vmid, guest_base + addr_offset, 0UL, 3UL);
 		kvm_tlb_flush_vmid_ipa_host(guest_base + addr_offset);
 		map_pfn_vm(vmid, guest_base + addr_offset, shmem_base + addr_offset, 3UL);
+		kvm_tlb_flush_vmid_ipa_host(guest_base + addr_offset);
 
 		// Increment page reference counter 
 		pfn_count = get_pfn_count(shmem_base_pfn + i);
@@ -138,6 +140,8 @@ void __hyp_text handle_guest_shmem_register(u32 vmid, u64 guest_base) {
 	release_lock_s2page();
 
 	release_lock_core();
+
+	print_string("[SeKVM] Guest finished registering for shared memory\n");
 
 }
 

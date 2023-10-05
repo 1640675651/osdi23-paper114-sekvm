@@ -142,7 +142,7 @@ void __hyp_text map_pfn_vm(u32 vmid, u64 addr, u64 pte, u32 level)
 	/* We give the VM RWX permission now. */
 	u64 perm = 0xfff;
 	u64 size = PAGE_SIZE;
-
+	
 	if (level == 2U) {
 		/* FIXME: verified code has pte = paddr | perm; */
 		pte = paddr + perm;

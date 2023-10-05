@@ -95,8 +95,11 @@ void __hyp_text handle_guest_shmem_register(u32 vmid, u64 guest_base) {
 	u32 pfn_count;
 	struct el2_vm_info *vm_info;
 	int i;
+	char debug_out[500];
 
 	print_string("[SeKVM] Guest registering for shared memory\n");
+	snprintf(debug_out, 450, "[SeKVM] VMID: %u guest_base: %llu", vmid, guest_base);
+	print_string(debug_out);
 	// get el2 data lock 
 	acquire_lock_core();
 	el2_data = get_el2_data_start();
@@ -105,6 +108,10 @@ void __hyp_text handle_guest_shmem_register(u32 vmid, u64 guest_base) {
 	shmem_base = el2_data->shmem_base;
 	shmem_size = el2_data->shmem_size;
 
+	snprintf(debug_out, 450, "[SeKVM] VMID: %u shmem_base: %llu", vmid, shmem_base);
+	print_string(debug_out);
+	snprintf(debug_out, 450, "[SeKVM] VMID: %u shmem_size: %llu", vmid, shmem_size);
+	print_string(debug_out);
 	// lock vm info lock
 	acquire_lock_vm(vmid);
 
@@ -119,11 +126,15 @@ void __hyp_text handle_guest_shmem_register(u32 vmid, u64 guest_base) {
 	num_pages = shmem_size / PAGE_SIZE;
 	shmem_base_pfn = shmem_base / PAGE_SIZE;
 
+	snprintf(debug_out, 450, "[SeKVM] VMID: %u num_pages: %llu, base_pfn: %llu", vmid, num_pages, shmem_base_pfn);
+	print_string(debug_out);
+
 	acquire_lock_s2page();
 	// Iterate over each page
 	for (i = 0; i < num_pages; i++) {
 		// Offset from base 
 		addr_offset = (i * PAGE_SIZE);
+
 		// Map each page
 		map_pfn_vm(vmid, guest_base + addr_offset, 0UL, 3UL);
 		kvm_tlb_flush_vmid_ipa_host(guest_base + addr_offset);
@@ -133,6 +144,8 @@ void __hyp_text handle_guest_shmem_register(u32 vmid, u64 guest_base) {
 		// Increment page reference counter 
 		pfn_count = get_pfn_count(shmem_base_pfn + i);
 		set_pfn_count(shmem_base_pfn + i, pfn_count + 1);
+		snprintf(debug_out, 450, "[SeKVM] VMID: %u guest page address: %llu, physical page address: %llu, pfn_count: %u", vmid, guest_base + addr_offset, shmem_base + addr_offset, pfn_count);
+		print_string(debug_out);
 	}
 
 		// When to flush TLB?

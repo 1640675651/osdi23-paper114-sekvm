@@ -95,10 +95,10 @@ void __hyp_text handle_guest_shmem_register(u32 vmid, u64 guest_base) {
 	u32 pfn_count;
 	struct el2_vm_info *vm_info;
 	int i;
-	char debug_out[500];
+	char debug_out[100];
 
 	print_string("[SeKVM] Guest registering for shared memory\n");
-	snprintf(debug_out, 450, "[SeKVM] VMID: %u guest_base: %llu", vmid, guest_base);
+	snprintf(debug_out, 450, "[SeKVM] VMID: %u guest_base: %llu\n", vmid, guest_base);
 	print_string(debug_out);
 	// get el2 data lock 
 	acquire_lock_core();
@@ -108,9 +108,9 @@ void __hyp_text handle_guest_shmem_register(u32 vmid, u64 guest_base) {
 	shmem_base = el2_data->shmem_base;
 	shmem_size = el2_data->shmem_size;
 
-	snprintf(debug_out, 450, "[SeKVM] VMID: %u shmem_base: %llu", vmid, shmem_base);
+	snprintf(debug_out, 450, "[SeKVM] VMID: %u shmem_base: %llu\n", vmid, shmem_base);
 	print_string(debug_out);
-	snprintf(debug_out, 450, "[SeKVM] VMID: %u shmem_size: %llu", vmid, shmem_size);
+	snprintf(debug_out, 450, "[SeKVM] VMID: %u shmem_size: %llu\n", vmid, shmem_size);
 	print_string(debug_out);
 	// lock vm info lock
 	acquire_lock_vm(vmid);
@@ -126,7 +126,7 @@ void __hyp_text handle_guest_shmem_register(u32 vmid, u64 guest_base) {
 	num_pages = shmem_size / PAGE_SIZE;
 	shmem_base_pfn = shmem_base / PAGE_SIZE;
 
-	snprintf(debug_out, 450, "[SeKVM] VMID: %u num_pages: %llu, base_pfn: %llu", vmid, num_pages, shmem_base_pfn);
+	snprintf(debug_out, 450, "[SeKVM] VMID: %u num_pages: %llu, base_pfn: %llu\n", vmid, num_pages, shmem_base_pfn);
 	print_string(debug_out);
 
 	acquire_lock_s2page();

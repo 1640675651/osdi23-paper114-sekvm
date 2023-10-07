@@ -1488,9 +1488,9 @@ static void alloc_shmem(void)
 {
 	struct page *first_page;
 	int num_pages;
-	unsigned long base_addr, size; 
+	u64 base_addr, size; 
 
-	printk(KERN_INFO "[SeKVM] Allocating Shared Memory\n");
+	printk(KERN_INFO "[SeKVM_EL1] Allocating Shared Memory\n");
 
 	num_pages = 5;
 	first_page = alloc_pages(GFP_KERNEL, num_pages);
@@ -1498,7 +1498,17 @@ static void alloc_shmem(void)
 
 	size = (1 << num_pages) * PAGE_SIZE;
 
+	printk(KERN_INFO "[SeKVM_EL1] Base host physical address = %llu\n", base_addr);
+
 	kvm_call_core(HVC_HOST_SHMEM_REGISTER, base_addr, size);
+
+	printk(KERN_INFO "[SeKVM_EL1] Tring to write 123 to the first int of shared memory after giving it up to corevisor");
+	*(int*)page_to_virt(first_page) = 123;
+	//printk(KERN_INFO "[SeKVM_EL1] virt_to_phys = %llu\n", virt_to_phys(page_to_virt(first_page)));
+	//printk(KERN_INFO "[SeKVM_EL1] page_to_virt = %llu\n", page_to_virt(first_page));
+	//printk(KERN_INFO "[SeKVM_EL1] phys_to_virt = %llu\n", phys_to_virt(page_to_phys(first_page)));
+
+	printk(KERN_INFO "[SeKVM_EL1] Reading back the first int in shared memory %d\n", *(int*)page_to_virt(first_page));
 
 }
 
@@ -1960,8 +1970,6 @@ int kvm_arch_init(void *opaque)
 		kvm_info("VHE mode initialized successfully\n");
 	else
 		kvm_info("Hyp mode initialized successfully\n");
-	
-	alloc_shmem();
 
 	return 0;
 
@@ -1981,6 +1989,7 @@ void kvm_arch_exit(void)
 static int arm_init(void)
 {
 	int rc = kvm_init(NULL, sizeof(struct kvm_vcpu), 0, THIS_MODULE);
+	alloc_shmem();
 	return rc;
 }
 

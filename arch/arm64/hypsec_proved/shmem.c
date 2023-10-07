@@ -5,11 +5,41 @@
 
 #include "hypsec.h"
 
+void __hyp_text print_num(u64 num)
+{
+	char num_str[21];
+	u64 num_copy = num;
+	int i=19;
+	while(num_copy)
+	{
+		num_str[i] = num_copy % 10 + '0';
+		num_copy /= 10;
+		i--;
+	}
+	num_str[20] = 0;
+	print_string(num_str+i+1);
+}
+
 void __hyp_text shmem_register(u64 base, u64 size) {
 	struct el2_data *el2_data = get_el2_data_start();
 	int i;
 
-	print_string("[SeKVM] Registering Shared Memory\n");
+	print_string("[SeKVM_EL2] Registering Shared Memory\n");
+	print_string("[SeKVM_EL2] Base host physical address = ");
+	print_num(base);
+	print_string("\n");
+
+
+	if(base % PAGE_SIZE != 0)
+	{
+		print_string("[SeKVM_EL2] Host memory base is not 4KB aligned. Aborting.\n");
+		return;
+	}
+	if(size % PAGE_SIZE != 0)
+	{
+		print_string("[SeKVM_EL2] Host memory size is not 4KB aligned, Aborting.\n");
+		return;
+	}
 
 	// get abs lock
 
@@ -18,8 +48,10 @@ void __hyp_text shmem_register(u64 base, u64 size) {
 
 	for (i = 0; i < size / PAGE_SIZE; i++) {	
 		u64 page_base = base + i * PAGE_SIZE;
+		//print_string("[SeKVM_EL2] Marking page starting at physical address ");
+		//print_num(page_base);
+		//print_string(" as shared\n");
 		assign_pfn_to_vm(SHHMEM, (u64)0, page_base/PAGE_SIZE);
-	
 	}
 	
 }
@@ -34,7 +66,7 @@ u64 __hyp_text handle_get_shmem_size() {
 
 }
 
-extern void kvm_tlb_flush_vmid_ipa_host(phys_addr_t ipa);
+extern void __hyp_text __kvm_tlb_flush_vmid_ipa_shadow(phys_addr_t ipa);
 void __hyp_text handle_guest_shmem_unregister(u32 vmid) {
 	struct el2_data *el2_data;
 	u64 shmem_base, shmem_size, guest_base;
@@ -75,7 +107,7 @@ void __hyp_text handle_guest_shmem_unregister(u32 vmid) {
 
 		// Set each mapping to zero and clear tlb
 		map_pfn_vm(vmid, guest_base + addr_offset, 0UL, 3UL);
-		kvm_tlb_flush_vmid_ipa_host(guest_base + addr_offset);
+		__kvm_tlb_flush_vmid_ipa_shadow(guest_base);
 
 		// Increment page reference counter 
 		pfn_count = get_pfn_count(shmem_base_pfn + i);
@@ -95,11 +127,17 @@ void __hyp_text handle_guest_shmem_register(u32 vmid, u64 guest_base) {
 	u32 pfn_count;
 	struct el2_vm_info *vm_info;
 	int i;
-	char debug_out[100];
+	//char debug_out[100];
 
 	print_string("[SeKVM] Guest registering for shared memory\n");
-	snprintf(debug_out, 450, "[SeKVM] VMID: %u guest_base: %llu\n", vmid, guest_base);
-	print_string(debug_out);
+	//snprintf(debug_out, 450, "[SeKVM] VMID: %u guest_base: %llu\n", vmid, guest_base);
+
+	print_string("[SeKVM] VMID: ");
+	print_num(vmid);
+	print_string(" guest_base: ");
+	print_num(guest_base);
+	print_string("\n");
+
 	// get el2 data lock 
 	acquire_lock_core();
 	el2_data = get_el2_data_start();
@@ -130,9 +168,9 @@ void __hyp_text handle_guest_shmem_register(u32 vmid, u64 guest_base) {
 
 		// Map each page
 		map_pfn_vm(vmid, guest_base + addr_offset, 0UL, 3UL);
-		kvm_tlb_flush_vmid_ipa_host(guest_base + addr_offset);
+		__kvm_tlb_flush_vmid_ipa_shadow(guest_base);
 		map_pfn_vm(vmid, guest_base + addr_offset, shmem_base + addr_offset, 3UL);
-		kvm_tlb_flush_vmid_ipa_host(guest_base + addr_offset);
+		__kvm_tlb_flush_vmid_ipa_shadow(guest_base);
 
 		// Increment page reference counter 
 		pfn_count = get_pfn_count(shmem_base_pfn + i);
@@ -142,20 +180,51 @@ void __hyp_text handle_guest_shmem_register(u32 vmid, u64 guest_base) {
 
 		// When to flush TLB?
 
+	el2_memset(__el2_va(shmem_base), -1, PAGE_SIZE);
+	u64 val = pt_load(vmid, shmem_base);
+	print_string("[SeKVM] VMID: ");
+	print_num(vmid);
+	print_string(" first u64 = ");
+	print_num(val);
+	print_string("\n");
+	
 	release_lock_s2page();
 
 	release_lock_core();
+	
+	//snprintf(debug_out, 450, "[SeKVM] VMID: %u shmem_base: %llu\n", vmid, shmem_base);
+	print_string("[SeKVM] VMID: ");
+	print_num(vmid);
+	print_string(" shmem_base: ");
+	print_num(shmem_base);
+	print_string("\n");
 
-	snprintf(debug_out, 450, "[SeKVM] VMID: %u shmem_base: %llu\n", vmid, shmem_base);
-	print_string(debug_out);
-	snprintf(debug_out, 450, "[SeKVM] VMID: %u shmem_size: %llu\n", vmid, shmem_size);
-	print_string(debug_out);
+	//snprintf(debug_out, 450, "[SeKVM] VMID: %u shmem_size: %llu\n", vmid, shmem_size);
+	print_string("[SeKVM] VMID: ");
+	print_num(vmid);
+	print_string(" shmem_size: ");
+	print_num(shmem_size);
+	print_string("\n");
 
-	snprintf(debug_out, 450, "[SeKVM] VMID: %u num_pages: %llu, base_pfn: %llu\n", vmid, num_pages, shmem_base_pfn);
-	print_string(debug_out);
+	//snprintf(debug_out, 450, "[SeKVM] VMID: %u num_pages: %llu, base_pfn: %llu\n", vmid, num_pages, shmem_base_pfn);
+	print_string("[SeKVM] VMID: ");
+	print_num(vmid);
+	print_string(" num_pages: ");
+	print_num(num_pages);
+	print_string(" base_pfn ");
+	print_num(shmem_base_pfn);
+	print_string("\n");
 
-	snprintf(debug_out, 450, "[SeKVM] (for last page) VMID: %u guest page address: %llu, physical page address: %llu, pfn_count: %u", vmid, guest_base + addr_offset, shmem_base + addr_offset, pfn_count);
-	print_string(debug_out);
+	//snprintf(debug_out, 450, "[SeKVM] (for last page) VMID: %u guest page address: %llu, physical page address: %llu, pfn_count: %u", vmid, guest_base + addr_offset, shmem_base + addr_offset, pfn_count);
+	print_string("[SeKVM] (for last page) VMID: ");
+	print_num(vmid);
+	print_string(" guest page address: ");
+	print_num(guest_base + addr_offset);
+	print_string(" physical page address: ");
+	print_num(shmem_base + addr_offset);
+	print_string(" pfn_count: ");
+	print_num(pfn_count);
+	print_string("\n");
 
 	print_string("[SeKVM] Guest finished registering for shared memory\n");
 

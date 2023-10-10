@@ -91,6 +91,16 @@ static inline void __hyp_text senduart(char word)
 }
 #endif
 
+void __hyp_text _putchar(char ch)
+{
+	if (ch != '\n')
+		senduart(ch);
+	else {
+		senduart('\r');
+		senduart('\n');
+	}
+}
+
 void __hyp_text printhex_ul(unsigned long input)
 {
 	char word;

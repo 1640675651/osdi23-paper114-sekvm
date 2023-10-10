@@ -28,6 +28,7 @@ obj-y += VCPUOps.o
 #obj-y += sysreg-sr.o
 obj-y += sysreg-sr-opt.o
 #obj-y += hacl-20/
+obj-y += printf.o
 obj-y += MmioOps.o
 obj-y += MmioOpsAux.o
 obj-y += MmioCore.o

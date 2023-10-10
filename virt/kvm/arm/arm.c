@@ -1492,13 +1492,13 @@ static void alloc_shmem(void)
 
 	printk(KERN_INFO "[SeKVM_EL1] Allocating Shared Memory\n");
 
-	num_pages = 5;
+	num_pages = 9;
 	first_page = alloc_pages(GFP_KERNEL, num_pages);
 	base_addr = page_to_phys(first_page);
 
 	size = (1 << num_pages) * PAGE_SIZE;
 
-	printk(KERN_INFO "[SeKVM_EL1] Base host physical address = %llu\n", base_addr);
+	printk(KERN_INFO "[SeKVM_EL1] Base host physical address = %#llx\n", base_addr);
 
 	kvm_call_core(HVC_HOST_SHMEM_REGISTER, base_addr, size);
 
@@ -1509,7 +1509,7 @@ static void alloc_shmem(void)
 	//printk(KERN_INFO "[SeKVM_EL1] phys_to_virt = %llu\n", phys_to_virt(page_to_phys(first_page)));
 
 	printk(KERN_INFO "[SeKVM_EL1] Reading back the first int in shared memory %d\n", *(int*)page_to_virt(first_page));
-
+	// why the host can still operate on this virtual address after register? Is it mapped to somewhere else?
 }
 
 static void cpu_init_hyp_mode(void *dummy)

@@ -1819,7 +1819,7 @@ static int user_mem_abort(struct kvm_vcpu *vcpu, phys_addr_t fault_ipa,
 			  struct kvm_memory_slot *memslot, unsigned long hva,
 			  unsigned long fault_status)
 {
-	printk(KERN_INFO "[SeKVM] Page fault ipa = %llu\n", fault_ipa);
+	//printk(KERN_ERR "[SeKVM] Page fault ipa = %#lx\n", fault_ipa);
 	int ret;
 	bool write_fault, writable, force_pte = false;
 	bool exec_fault, needs_exec;

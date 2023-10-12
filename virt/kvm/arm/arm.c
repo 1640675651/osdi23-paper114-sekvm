@@ -1502,14 +1502,10 @@ static void alloc_shmem(void)
 
 	kvm_call_core(HVC_HOST_SHMEM_REGISTER, base_addr, size);
 
-	printk(KERN_INFO "[SeKVM_EL1] Tring to write 123 to the first int of shared memory after giving it up to corevisor");
-	*(int*)page_to_virt(first_page) = 123;
-	//printk(KERN_INFO "[SeKVM_EL1] virt_to_phys = %llu\n", virt_to_phys(page_to_virt(first_page)));
-	//printk(KERN_INFO "[SeKVM_EL1] page_to_virt = %llu\n", page_to_virt(first_page));
-	//printk(KERN_INFO "[SeKVM_EL1] phys_to_virt = %llu\n", phys_to_virt(page_to_phys(first_page)));
-
-	printk(KERN_INFO "[SeKVM_EL1] Reading back the first int in shared memory %d\n", *(int*)page_to_virt(first_page));
-	// why the host can still operate on this virtual address after register? Is it mapped to somewhere else?
+	//printk(KERN_INFO "[SeKVM_EL1] Tring to write 123 to the first int of shared memory after giving it up to corevisor");
+	//*(int*)page_to_virt(first_page) = 123;
+	//printk(KERN_INFO "[SeKVM_EL1] Reading back the first int in shared memory %d\n", *(int*)page_to_virt(first_page));
+	// why the host can still operate on this virtual address after register? assign_pfn_to_vm does not clear host PT entry?
 }
 
 static void cpu_init_hyp_mode(void *dummy)

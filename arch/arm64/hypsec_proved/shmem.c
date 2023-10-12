@@ -72,7 +72,7 @@ void __hyp_text handle_guest_shmem_unregister(u32 vmid) {
 	u64 addr_offset, shmem_base_pfn, num_pages;
 	u32 pfn_count;
 	struct el2_vm_info *vm_info;
-	int i;
+	int i, j;
 
 	// get el2 data lock 
 	acquire_lock_core();
@@ -95,22 +95,25 @@ void __hyp_text handle_guest_shmem_unregister(u32 vmid) {
 	// unlock vm info lock
 	release_lock_vm(vmid);
 
-	num_pages = shmem_size / PAGE_SIZE;
-	shmem_base_pfn = shmem_base / PAGE_SIZE;
+	num_pages = shmem_size / SZ_2M;
+	shmem_base_pfn = shmem_base / SZ_2M;
 
 	acquire_lock_s2page();
 	// Iterate over each page
 	for (i = 0; i < num_pages; i++) {
 		// Offset from base 
-		addr_offset = (i * PAGE_SIZE);
+		addr_offset = (i * SZ_2M);
 
 		// Set each mapping to zero and clear tlb
-		map_pfn_vm(vmid, guest_base + addr_offset, 0UL, 3UL);
+		map_pfn_vm(vmid, guest_base + addr_offset, 0UL, 2UL);
 		__kvm_tlb_flush_vmid_ipa_shadow(guest_base);
 
-		// Increment page reference counter 
-		pfn_count = get_pfn_count(shmem_base_pfn + i);
-		set_pfn_count(shmem_base_pfn + i, pfn_count + 1);
+		// Decrement page reference counter 
+		for(j = 0;j < SZ_2M/PAGE_SIZE;j++)
+		{
+			pfn_count = get_pfn_count(shmem_base_pfn + (i*SZ_2M + j*PAGE_SIZE)/PAGE_SIZE);
+			set_pfn_count(shmem_base_pfn + (i*SZ_2M + j*PAGE_SIZE)/PAGE_SIZE, pfn_count - 1);
+		}
 	}
 
 	release_lock_s2page();
@@ -125,7 +128,7 @@ void __hyp_text handle_guest_shmem_register(u32 vmid, u64 guest_base) {
 	u64 addr_offset, shmem_base_pfn, num_pages;
 	u32 pfn_count;
 	struct el2_vm_info *vm_info;
-	int i;
+	int i, j;
 	//char debug_out[100];
 
 	print_string("[SeKVM_EL2] Guest registering for shared memory\n");
@@ -142,7 +145,7 @@ void __hyp_text handle_guest_shmem_register(u32 vmid, u64 guest_base) {
 	// XXX: properly check this
 	if (guest_base % SZ_2M) {
 		printf("[SeKVM_EL2] Guest provided base unaligned to 2MB\n");
-		return 0;
+		return;
 	}
 
 	// get el2 data lock 
@@ -182,8 +185,11 @@ void __hyp_text handle_guest_shmem_register(u32 vmid, u64 guest_base) {
 
 		// XXX: Fix this for every 4KB Page
 		// Increment page reference counter
-		pfn_count = get_pfn_count(shmem_base_pfn + i);
-		set_pfn_count(shmem_base_pfn + i, pfn_count + 1);
+		for(j = 0;j < SZ_2M/PAGE_SIZE;j++)
+		{
+			pfn_count = get_pfn_count(shmem_base_pfn + (i*SZ_2M + j*PAGE_SIZE)/PAGE_SIZE);
+			set_pfn_count(shmem_base_pfn + (i*SZ_2M + j*PAGE_SIZE)/PAGE_SIZE, pfn_count + 1);
+		}
 
 	}
 
